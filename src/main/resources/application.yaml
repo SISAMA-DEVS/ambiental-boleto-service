@@ -1,0 +1,80 @@
+server:
+  port: 9099
+  servlet:
+    context-path: /d9099/ambiental-boleto-service/v1
+
+spring:
+  application:
+    name: ambiental-boleto-service
+
+  profiles:
+    active: dev
+
+ambiental:
+  token:
+    API-Token: 123456789987654321
+  url:
+    sefin-ro: https://dare.sefin.ro.gov.br
+    sefin-ro-documento: https://dare.sefin.ro.gov.br/avulso/impressao/documento
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:sqlserver://10.1.2.211\10.1.2.211\MSSQLSERVER_DEV,1434:1434;database=ambiental_dev
+    username: user_db_ambiental
+    password: ambiental@M1lt3c#
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    database-platform: org.hibernate.dialect.SQLServer2012Dialect
+    show-sql: false
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: homologacao
+  datasource:
+    url: jdbc:sqlserver://10.1.2.211\10.1.2.211\MSSQLSERVER_HOM,1436:1436;database=ambiental_hom
+    username: user_db_ambiental
+    password: ambiental@M1lt3c#
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    database-platform: org.hibernate.dialect.SQLServer2012Dialect
+    show-sql: false
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: producao
+  datasource:
+    url: jdbc:sqlserver://172.16.8.109;database=ambiental_prod;encrypt=true;trustServerCertificate=true
+    username: user_db_meioambiente
+    password: ambiental@M1lt3c#
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    database-platform: org.hibernate.dialect.SQLServer2012Dialect
+    show-sql: false
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+
+logging:
+  level:
+    br.com.miltecti.client.SEFINROClient: DEBUG

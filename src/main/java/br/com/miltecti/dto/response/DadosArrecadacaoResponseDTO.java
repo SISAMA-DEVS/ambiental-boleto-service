@@ -1,0 +1,77 @@
+package br.com.miltecti.dto.response;
+
+import lombok.Data;
+
+@Data
+public class DadosArrecadacaoResponseDTO {
+
+    private String tuk;
+    private String it_co_usuario;
+    private String it_da_transacao;
+    private String it_ho_transacao;
+    private String it_co_programa;
+    private String it_nu_terminal;
+    private String it_nu_guia_lancamento;
+    private String it_co_municipio;
+    private String it_in_tipo_devedor;
+    private String it_nu_devedor;
+    private String it_nu_cpf_cgc_devedor;
+    private String it_in_tipo_complemento;
+    private String it_nu_complemento;
+    private String it_da_referencia_lancamento;
+    private String it_tx_baixa_especial;
+    private String it_tx_revisao_lancamento;
+    private String it_co_receita;
+    private String it_nu_parcela;
+    private String it_da_vencimento;
+    private String it_da_vencimento_original;
+    private String it_va_principal_original;
+    private String it_va_multa_original;
+    private String it_va_juros_original;
+    private String it_va_principal;
+    private String it_va_multa;
+    private String it_va_juros;
+    private String it_va_acrescimo;
+    private String it_va_total_lancamento;
+    private String it_va_total_pgto_efetuado;
+    private String it_da_pagamento_efetuado;
+    private String it_co_situacao_lancamento;
+    private String it_nu_guia_redirecionada;
+    private String it_in_baixa_definitiva;
+    private String it_nu_parcela_redirecionada;
+    private String it_in_cobra_multa;
+    private String it_nu_parcela_anterior;
+    private String it_nu_inscricao_transportadora;
+    private String it_da_referencia_giam;
+    private String it_in_baixa_temporaria;
+    private String it_in_complementares_dares;
+    private String it_nu_auto_detran;
+    private String it_in_refaz;
+    private String it_co_situacao_real;
+    private String it_nu_processo_real;
+    private String sp_lancamento;
+    private String sp_situacao_pagamento;
+    private String sp_guia_lancamento;
+    private String sp_situacao_sub_guia_venc;
+    private String sp_compl_guia_parcela;
+    private String sp_dev_venc_st_receita;
+    private String sp_data_tipo_rec_parcel;
+    private String sp_lancamento_compl;
+    private String sp_sit_sub_munic_venc;
+    private String sp_dev_venc_guia;
+    private String sp_devedor_guia;
+    private String sp_situacao_devedor;
+    private String sp_usu_data_hora;
+    private String sp_tip_complem_situa;
+    private String sp_sit_guia_mun_vencimento;
+    private String sp_devedor_guia_cnpj;
+    private String sp_sit_mun_ven_guia;
+    private String sp_sub_devedor_data_venc;
+    private String sp_devedor_situacao_lancamento;
+    private String sp_sit_rec_tipo_dev_venc;
+    private String sp_ven_mun_sit_guia;
+    private String sp_dev_rec_ven_sit;
+    private String sp_resultados_gerenciais;
+    private String sp_vencimento_compl;
+    private String sp_situacao_lanc_devedor;
+}

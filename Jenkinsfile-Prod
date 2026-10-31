@@ -1,0 +1,207 @@
+pipeline {
+agent any
+
+
+environment {
+    REPO_URL = 'https://github.com/SISAMA-DEVS/ambiental-boleto-service.git'
+    SERVER_IP = '172.16.8.110'
+    REMOTE_PATH = '/home/miltec/Dev/Projetos/api/ambiental-boleto'
+    IMAGE_NAME = 'ambiental-boleto-service'
+    IMAGE_TAG = 'latest'
+    APP_PORT = '9099'
+    EVOLUTION_URL = 'http://10.1.15.23:8085'
+    EVOLUTION_INSTANCE = 'jenkins'
+    WHATSAPP_NUMBER = '120363430379304171@g.us'
+}
+
+stages {
+
+    stage('Preparar servidor Docker') {
+        steps {
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'ssh-docker-miltec',
+                    usernameVariable: 'SSH_USER',
+                    passwordVariable: 'SSH_PASS'
+                )
+            ]) {
+                sh '''
+                    sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SERVER_IP "
+                        mkdir -p $REMOTE_PATH &&
+                        mkdir -p /home/miltec/.m2/repository
+                    "
+                '''
+            }
+        }
+    }
+
+    stage('Enviar arquivos para servidor Docker') {
+        steps {
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'ssh-docker-miltec',
+                    usernameVariable: 'SSH_USER',
+                    passwordVariable: 'SSH_PASS'
+                )
+            ]) {
+                sh '''
+                    sshpass -p "$SSH_PASS" rsync -avz --delete \
+                      --exclude='.git' \
+                      --exclude='target' \
+                      ./ $SSH_USER@$SERVER_IP:$REMOTE_PATH/
+                '''
+            }
+        }
+    }
+
+    stage('Corrigir permissões') {
+        steps {
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'ssh-docker-miltec',
+                    usernameVariable: 'SSH_USER',
+                    passwordVariable: 'SSH_PASS'
+                )
+            ]) {
+                sh '''
+                    sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SERVER_IP "
+                        echo 'Corrigindo permissões do projeto e cache Maven...' &&
+
+                        sudo chown -R $SSH_USER:$SSH_USER $REMOTE_PATH || true &&
+                        sudo chown -R $SSH_USER:$SSH_USER /home/miltec/.m2 || true &&
+
+                        echo 'Removendo target antigo...' &&
+                        rm -rf $REMOTE_PATH/target || sudo rm -rf $REMOTE_PATH/target
+                    "
+                '''
+            }
+        }
+    }
+
+    stage('Gerar build Maven') {
+        steps {
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'ssh-docker-miltec',
+                    usernameVariable: 'SSH_USER',
+                    passwordVariable: 'SSH_PASS'
+                )
+            ]) {
+                sh '''
+                    sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SERVER_IP "
+                        set -e
+
+                        cd $REMOTE_PATH
+
+                        echo 'Criando cache Maven...' &&
+                        mkdir -p /home/miltec/.m2/repository &&
+
+                        echo 'UID/GID usado no Docker:' &&
+                        id -u &&
+                        id -g &&
+
+                        echo 'Gerando pacote Maven com Docker Java 21...' &&
+
+                        docker run --rm \
+                          --user $(id -u):$(id -g) \
+                          -v $REMOTE_PATH:/app \
+                          -v /home/miltec/.m2:/home/miltec/.m2 \
+                          -e MAVEN_CONFIG=/home/miltec/.m2 \
+                          -w /app \
+                          maven:3.9.9-eclipse-temurin-21 \
+                          mvn clean package -DskipTests
+                    "
+                '''
+            }
+        }
+    }
+
+    stage('Gerar imagem Docker') {
+        steps {
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'ssh-docker-miltec',
+                    usernameVariable: 'SSH_USER',
+                    passwordVariable: 'SSH_PASS'
+                )
+            ]) {
+                sh '''
+                    sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SERVER_IP "
+                        set -e
+
+                        cd $REMOTE_PATH
+
+                        echo 'Dockerfile usado no build:' &&
+                        cat Dockerfile &&
+
+                        echo 'JAR gerado:' &&
+                        ls -la target/*.jar &&
+
+                        echo 'Removendo imagem antiga...' &&
+                        docker rmi $IMAGE_NAME:$IMAGE_TAG || true &&
+
+                        echo 'Gerando imagem Docker...' &&
+                        docker build --no-cache -t $IMAGE_NAME:$IMAGE_TAG .
+                    "
+                '''
+            }
+        }
+    }
+
+    stage('Reiniciar container') {
+        steps {
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'ssh-docker-miltec',
+                    usernameVariable: 'SSH_USER',
+                    passwordVariable: 'SSH_PASS'
+                )
+            ]) {
+                sh '''
+                    sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SERVER_IP "
+                        docker stop $IMAGE_NAME || true &&
+                        docker rm $IMAGE_NAME || true &&
+
+                        docker run -d \
+                          --name $IMAGE_NAME \
+                          --restart=always \
+                          -p $APP_PORT:$APP_PORT \
+                          -e SPRING_PROFILES_ACTIVE=producao \
+                          $IMAGE_NAME:$IMAGE_TAG
+                    "
+                '''
+            }
+        }
+    }
+
+    stage('Validar container') {
+        steps {
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'ssh-docker-miltec',
+                    usernameVariable: 'SSH_USER',
+                    passwordVariable: 'SSH_PASS'
+                )
+            ]) {
+                sh '''
+                    sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SERVER_IP "
+                        docker ps | grep $IMAGE_NAME || true &&
+                        docker logs --tail=100 $IMAGE_NAME || true
+                    "
+                '''
+            }
+        }
+    }
+}
+
+post {
+    success {
+        echo 'Pipeline finalizada com sucesso. Imagem Docker gerada e container iniciado.'
+    }
+
+    failure {
+        echo 'Erro na pipeline. Verifique os logs do Jenkins.'
+    }
+}
+
+}
