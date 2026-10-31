@@ -9,7 +9,7 @@ environment {
     IMAGE_NAME = 'ambiental-boleto-service'
     IMAGE_TAG = 'latest'
     APP_PORT = '9099'
-    EVOLUTION_URL = 'http://10.1.15.23:8085'
+    EVOLUTION_URL = 'http:/172.16.8.110:8085'
     EVOLUTION_INSTANCE = 'jenkins'
     WHATSAPP_NUMBER = '120363430379304171@g.us'
 }
